@@ -41,6 +41,8 @@
 #define ARCH_CPU_X86_FAMILY 1
 #elif defined(__ARMEL__)
 #define ARCH_CPU_ARM_FAMILY 1
+#else
+#define ARCH_CPU_ARM_FAMILY 1
 #endif
 
 namespace rocksdb {

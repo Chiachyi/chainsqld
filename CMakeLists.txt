@@ -67,6 +67,31 @@
 #
 # Don't put any code above or in this block, unless it
 # has similar constraints.
+#########################################################
+SET(CMAKE_SYSTEM_NAME Linux)
+set(CMAKE_SYSTEM_PROCESSOR arm)
+
+#SET(CMAKE_SYSTEM_VERSION 1)
+set(CMAKE_SYSROOT /home/lc/aworkspace/chainsqlCx/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/aarch64-linux-gnu/libc)
+
+# specify the cross compiler
+set(tools /home/lc/aworkspace/chainsqlCx/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu)
+set(CMAKE_C_COMPILER ${tools}/bin/aarch64-linux-gnu-gcc)
+set(CMAKE_CXX_COMPILER ${tools}/bin/aarch64-linux-gnu-g++)
+
+# where is the target environment 
+#SET(CMAKE_FIND_ROOT_PATH  /home/lc/gitrepository/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/arm-linux-gnueabihf/libc)
+
+# search for programs in the build host directories
+SET(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+# for libraries and headers in the target directories
+SET(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+SET(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
+# set( THREADS_PTHREAD_ARG 
+#     "PLEASE_FILL_OUT-FAILED_TO_RUN"
+#     CACHE STRING "Result from TRY_RUN" FORCE)
+#########################################################
 cmake_minimum_required(VERSION 3.1.0)
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/Builds/CMake")
 include(CMakeFuncs)
@@ -134,9 +159,9 @@ include_directories(
   src/beast/extras
   src/nudb/include
   src/soci/src
-  src/soci/include
-  src/evmjit
-  src/evmjit/evmc/include)
+  src/soci/include)
+#  src/evmjit
+#  src/evmjit/evmc/include)
 
 special_build_flags()
 
@@ -249,8 +274,8 @@ server_status_test_unity.cpp
 shamap_test_unity.cpp
 jtx_unity1.cpp
 jtx_unity2.cpp
-csf_unity.cpp
-vm_test_unity.cpp)
+csf_unity.cpp)
+#vm_test_unity.cpp)
 
 prepend(peersafe_unity_srcs
 src/peersafe/unity/
@@ -292,7 +317,7 @@ add_with_props(chainsqld_src_nonunity "${core_srcs}"
 
 set(non_unity_srcs ${core_srcs})
 
-add_subdirectory(src/evmjit)
+#add_subdirectory(src/evmjit)
 
 foreach(curdir
         beast/clock
@@ -571,7 +596,8 @@ set_startup_project(chainsqld)
 
 foreach(target IN LISTS targets)
     target_link_libraries(${target}
-      ${OPENSSL_LIBRARIES} ${PROTOBUF_LIBRARIES} ${SANITIZER_LIBRARIES} ${MYSQL_LIBRARIES} evmjit)
+        ${OPENSSL_LIBRARIES} ${PROTOBUF_LIBRARIES} ${SANITIZER_LIBRARIES} ${MYSQL_LIBRARIES})
+        #${OPENSSL_LIBRARIES} ${PROTOBUF_LIBRARIES} ${SANITIZER_LIBRARIES} ${MYSQL_LIBRARIES} evmjit)
 
     link_common_libraries(${target})
 endforeach()
