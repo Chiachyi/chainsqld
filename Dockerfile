@@ -2,7 +2,7 @@
 
 # Use the alpine baseimage
 FROM alpine:3.7
-MAINTAINER HenryLu <luxiaoming@peersafe.cn>
+MAINTAINER RUANCHENG <ruancheng@peersafe.cn>
 
 # make sure the package repository is up to date
 #RUN apk update && \
@@ -28,7 +28,7 @@ WORKDIR /opt/chainsql
 COPY ./src ./src
 COPY ./Builds/CMake ./Builds/CMake
 COPY ./doc/chainsqld-example.cfg chainsqld.cfg
-COPY ./mysqlclient.pc /usr/lib/pkgconfig/
+COPY ./Builds/Docker/mysqlclient.pc /usr/lib/pkgconfig/
 COPY ./CMakeLists.txt CMakeLists.txt
 
 RUN cd Builds; cmake -Dtarget=clang.release.unity  ../; make chainsqld -j2
