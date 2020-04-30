@@ -173,9 +173,11 @@ use_openssl(${openssl_min})
 
 use_protobuf()
 
-use_mysql()
+#use_mysql()
 
 setup_build_boilerplate()
+
+use_kingbase()
 
 ############################################################
 
@@ -569,7 +571,8 @@ set_startup_project(chainsqld)
 
 foreach(target IN LISTS targets)
     target_link_libraries(${target}
-      ${OPENSSL_LIBRARIES} ${PROTOBUF_LIBRARIES} ${SANITIZER_LIBRARIES} ${MYSQL_LIBRARIES} evmjit)
+      ${OPENSSL_LIBRARIES} ${PROTOBUF_LIBRARIES} ${SANITIZER_LIBRARIES} ${KINGBASE_LIBRARY} evmjit)
+      #${OPENSSL_LIBRARIES} ${PROTOBUF_LIBRARIES} ${SANITIZER_LIBRARIES} ${MYSQL_LIBRARIES} evmjit)
 
     link_common_libraries(${target})
 endforeach()

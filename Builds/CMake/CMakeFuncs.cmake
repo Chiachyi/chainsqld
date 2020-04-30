@@ -509,6 +509,16 @@ macro(use_mysql)
 
 endmacro()
 
+macro(use_kingbase)
+  set(CMAKE_SKIP_BUILD_RPATH  TRUE)
+  set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE) 
+  set(CMAKE_INSTALL_RPATH "./baseLib")
+  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+  set(BASE_LIBRARY_DIR "${CMAKE_SOURCE_DIR}/baseLib")
+  message(STATUS "BASE_LIBRARY_DIR: ${BASE_LIBRARY_DIR}")
+  set(KINGBASE_LIBRARY "${BASE_LIBRARY_DIR}/kdbodbcw.so") 
+endmacro()
+
 macro(use_protobuf)
   if (WIN32)
     if (DEFINED ENV{PROTOBUF_ROOT})

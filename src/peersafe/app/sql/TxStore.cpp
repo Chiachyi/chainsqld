@@ -55,6 +55,11 @@ TxStoreDBConn::TxStoreDBConn(const Config& cfg)
             database_name += ".db";
         dbType = "sqlite";
 	}
+	else if (result_type.first.compare("odbc")==0) {
+		if (database.second)
+			database_name = database.first;
+		dbType = "odbc";
+	}
     else
     {
         if (database.second)
