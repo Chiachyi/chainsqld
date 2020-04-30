@@ -79,7 +79,7 @@ DatabaseCon::DatabaseCon (
 				connectionstring += ";Pwd=" + pwd.first;
 			if (db.second)
 				connectionstring += ";Database=" + db.first;
-			//connectionstring = "DSN=gsodbc8;Uid=sysdba;Pwd=peersafe;Server=127.0.0.1;Port=5258;Database=chainsql1";
+			//connectionstring = "DSN=XXX;Uid=sysdba;Pwd=peersafe;Server=127.0.0.1;Port=5258;Database=chainsql1";
 		}
 		else {
 			std::pair<std::string, bool> unix_socket = setup.sync_db.find("unix_socket");
@@ -122,11 +122,11 @@ DatabaseCon::DatabaseCon (
 		if (boost::iequals(back_end, "mycat")) {
 			session_.autocommit_after_transaction(true);
 		}
-        if (strName.empty() == false) {
-            std::string use_database = "use " + strName;
-            soci::statement st = session_.prepare << use_database;
-            st.execute(true);
-        }
+        // if (strName.empty() == false) {
+        //     std::string use_database = "use " + strName;
+        //     soci::statement st = session_.prepare << use_database;
+        //     st.execute(true);
+        // }
 	}
 	for (int i = 0; i < initCount; ++i)
 	{
