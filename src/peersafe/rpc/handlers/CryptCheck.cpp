@@ -35,19 +35,26 @@ Json::Value doCreateRandom(RPC::Context& context)
 
     InfoSub::pointer ispSub;
     Json::Value jvResult (Json::objectValue);
+#ifdef GM_ALG_PROCESS
 
 	GMCheck* gmCheckObj = GMCheck::getInstance();
 	gmCheckObj->generateRandom2File();
 
     //Json::Value& tx_json(context.params["tx_json"]);
+#else
+
+    jvResult = RPC::make_error(rpcUNKNOWN_COMMAND, "This API just for GMAlg");
+#endif
 
     return jvResult;
 }
 
 Json::Value doCryptData(RPC::Context& context)
 {
-    InfoSub::pointer ispSub;
     Json::Value jvResult(Json::objectValue);
+
+#ifdef GM_ALG_PROCESS
+    InfoSub::pointer ispSub;
 	std::string errMsgStr("");
 	int gmAlgType, dataSetCount, plainDataLen;
 
@@ -99,6 +106,10 @@ Json::Value doCryptData(RPC::Context& context)
 	{
 		jvResult = RPC::make_error(rpcINVALID_PARAMS, getRet.second);
 	}
+#else
+
+    jvResult = RPC::make_error(rpcUNKNOWN_COMMAND, "This API just for GMAlg");
+#endif
 
 	return jvResult;
 }
