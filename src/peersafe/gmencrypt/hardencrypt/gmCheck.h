@@ -13,10 +13,19 @@
 const unsigned long randomCycheckLedgerNum = 4320;
 const int MAX_LEN_4_GMSTD = 232;
 
-#ifdef GM_ALG_PROCESS
-
 class GMCheck {
 
+public:
+	static GMCheck* getInstance();
+private:
+    static GMCheck* gmInstance;
+
+#ifndef GM_ALG_PROCESS
+public:
+    void tryRandomCycleCheck(unsigned long ledgerSeq) {};
+    bool randomSingleCheck(unsigned long dataLen) { return true; };
+}
+#else
 public:
 	bool sm2EncryptAndDecryptCheck(unsigned long plainDataLen=0);
 	bool sm2SignedAndVerifyCheck();
@@ -43,9 +52,7 @@ public:
 	int getDataSMALL(int dataSetCnt, unsigned int plainLen);
 	std::pair<bool, std::string> getAlgTypeData(int algType, int dataSetCnt, unsigned int plainDataLen);
 	//void setLogJournal(boost::beast::Journal* journal);
-public:
-	static GMCheck* getInstance();
-	
+
 public:
 	enum rpcAlgType
 	{
@@ -85,7 +92,6 @@ private:
 	
 private:
 	HardEncrypt* hEObj;
-	static GMCheck* gmInstance;
 	bool isRandomCycleCheckThread;
 	bool isRandomGenerateThread;
 	unsigned int parentTid;
