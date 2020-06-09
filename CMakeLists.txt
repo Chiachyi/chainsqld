@@ -134,9 +134,9 @@ include_directories(
   src/beast/extras
   src/nudb/include
   src/soci/src
-  src/soci/include
-  src/evmjit
-  src/evmjit/evmc/include)
+  src/soci/include)
+  #  src/evmjit
+  #  src/evmjit/evmc/include)
 
 special_build_flags()
 
@@ -292,14 +292,14 @@ add_with_props(chainsqld_src_nonunity "${core_srcs}"
 
 set(non_unity_srcs ${core_srcs})
 
-add_subdirectory(src/evmjit)
+#add_subdirectory(src/evmjit)
 
 foreach(curdir
-        beast/clock
-        beast/container
-        beast/insight
-        beast/net
-        beast/utility
+	beast/clock
+	beast/container
+	beast/insight
+	beast/net
+	beast/utility
         app
         basics
         conditions
@@ -348,7 +348,7 @@ list(APPEND non_unity_srcs "${nodestore_srcs}")
 foreach(curdir
         app
         basics
-        beast
+	beast
         conditions
         consensus
         core
@@ -382,11 +382,11 @@ if(WIN32 OR is_xcode)
     file(GLOB_RECURSE chainsqld_headers src/*.h src/*.hpp)
     list(APPEND chainsqld_headers Builds/CMake/CMakeFuncs.cmake)
     foreach(curdir
-            beast/asio
-            beast/core
-            beast/crypto
-            beast/cxx17
-            beast/hash
+	    beast/asio
+	    beast/core
+	    beast/crypto
+	    beast/cxx17
+	    beast/hash
             proto
             resource
             validators
@@ -571,7 +571,8 @@ set_startup_project(chainsqld)
 
 foreach(target IN LISTS targets)
     target_link_libraries(${target}
-      ${OPENSSL_LIBRARIES} ${PROTOBUF_LIBRARIES} ${SANITIZER_LIBRARIES} ${MYSQL_LIBRARIES} evmjit)
+      ${OPENSSL_LIBRARIES} ${PROTOBUF_LIBRARIES} ${SANITIZER_LIBRARIES} ${MYSQL_LIBRARIES})
+      #${OPENSSL_LIBRARIES} ${PROTOBUF_LIBRARIES} ${SANITIZER_LIBRARIES} ${MYSQL_LIBRARIES} evmjit)
 
     link_common_libraries(${target})
 endforeach()

@@ -16,7 +16,9 @@ ACTION  OF  CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 //==============================================================================
+#ifndef VM_TEST_CPP
 
+#else
 #include <string>
 #include <vector>
 #include <thread>
@@ -228,3 +230,4 @@ private:
 };
 BEAST_DEFINE_TESTSUITE_MANUAL(VM, evm, ripple);
 }
+#endif
