@@ -101,6 +101,7 @@ ValidatorKeys::ValidatorKeys(Config const& config, boost::beast::Journal j)
 				SecretKey tempSecKey(Slice(temp4Secret, 32));
 				tempSecKey.encrytCardIndex = index;
 				tempSecKey.keyTypeInt = hEObj->gmInCard;
+                hEObj->nodeKeyIndex_ = index;
 				hEObj->getPrivateKeyRight(index);
 				secretKey = tempSecKey;
 				delete[] temp4Secret;

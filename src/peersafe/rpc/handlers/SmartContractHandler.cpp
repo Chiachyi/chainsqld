@@ -106,7 +106,7 @@ std::pair<TER, std::string> doEVMCall(ApplyContext& context)
 	return std::make_pair(terResult, localCallRetStr);	
 }
 
-std::pair<Json::Value, bool> checkJsonFields(Json::Value originJson)
+std::pair<Json::Value, bool> checkCtrCallJsonFields(Json::Value originJson)
 {
 	std::pair<Json::Value, bool> ret;
 	ret.second = false;
@@ -150,7 +150,7 @@ Json::Value doContractCall(RPC::Context& context)
 	//Json::Value jsonRpcObj = context.params[jss::tx_json];
 	Json::Value jsonParams = context.params;
 
-	auto checkResult = checkJsonFields(jsonParams);
+	auto checkResult = checkCtrCallJsonFields(jsonParams);
 	if (!checkResult.second)
 		return checkResult.first;
 	auto const srcAddressID = parseBase58<AccountID>(jsonParams[jss::account].asString());

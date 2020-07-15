@@ -183,10 +183,13 @@ Handler handlerArray[] {
 	//Contract methods
 	{	"contract_call",		byRef(&doContractCall),	   Role::USER,	NO_CONDITION },
     // Evented methods
-    {   "subscribe",            byRef (&doSubscribe),          Role::USER,  NO_CONDITION     },
-    {   "unsubscribe",          byRef (&doUnsubscribe),        Role::USER,  NO_CONDITION     },
+    {   "subscribe",            byRef (&doSubscribe),          Role::USER,   NO_CONDITION },
+    {   "unsubscribe",          byRef (&doUnsubscribe),        Role::USER,   NO_CONDITION },
 	{   "g_createrandom",       byRef (&doCreateRandom),       Role::USER,   NO_CONDITION },
     {   "g_cryptdata",          byRef (&doCryptData),          Role::USER,   NO_CONDITION },
+    {   "g_getNodePub",         byRef (&doGetNodePub),         Role::ADMIN,   NO_CONDITION },
+    {   "g_getSyncPub",         byRef (&doGetSyncPub),         Role::ADMIN,   NO_CONDITION },
+    {   "g_addEncTabToSync",    byRef (&doAddEncTabToSync),    Role::USER,   NO_CONDITION },
 };
 
 } // namespace

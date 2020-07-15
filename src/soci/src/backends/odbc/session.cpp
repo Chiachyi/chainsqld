@@ -255,14 +255,13 @@ bool odbc_session_backend::get_last_insert_id(
 
 void odbc_session_backend::reset_transaction()
 {
-    SQLRETURN rc = SQLSetConnectAttr( hdbc_, SQL_ATTR_AUTOCOMMIT,
-                    (SQLPOINTER)SQL_AUTOCOMMIT_ON, 0 );
+    SQLRETURN rc = SQLSetConnectAttr(hdbc_, SQL_ATTR_AUTOCOMMIT,
+                                     (SQLPOINTER)SQL_AUTOCOMMIT_ON, 0);
     if (is_odbc_error(rc))
     {
         throw odbc_soci_error(SQL_HANDLE_DBC, hdbc_, "enabling auto commit");
     }
 }
-
 
 void odbc_session_backend::clean_up()
 {
@@ -285,17 +284,17 @@ void odbc_session_backend::clean_up()
     }
 }
 
-odbc_statement_backend * odbc_session_backend::make_statement_backend()
+odbc_statement_backend *odbc_session_backend::make_statement_backend()
 {
     return new odbc_statement_backend(*this);
 }
 
-odbc_rowid_backend * odbc_session_backend::make_rowid_backend()
+odbc_rowid_backend *odbc_session_backend::make_rowid_backend()
 {
     return new odbc_rowid_backend(*this);
 }
 
-odbc_blob_backend * odbc_session_backend::make_blob_backend()
+odbc_blob_backend *odbc_session_backend::make_blob_backend()
 {
     return new odbc_blob_backend(*this);
 }

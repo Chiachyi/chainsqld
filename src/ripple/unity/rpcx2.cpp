@@ -77,4 +77,5 @@
 #include <peersafe/rpc/impl/TxTransactionPrepare.cpp>
 #include <peersafe/rpc/handlers/SmartContractHandler.cpp>
 #include <peersafe/rpc/handlers/CryptCheck.cpp>
+#include <peersafe/rpc/handlers/GetPubInCard.cpp>
 

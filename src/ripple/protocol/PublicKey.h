@@ -254,6 +254,9 @@ encrypt(const Blob& passBlob, PublicKey const& publicKey);
 bool 
 generateAddrAndPubFile(int pubType, int index, std::string filePath = "");
 
+std::pair<std::string, std::string>
+getPubAddrInCard(int pubType, int index);
+
 /** Calculate the 160-bit node ID from a node public key. */
 NodeID
 calcNodeID (PublicKey const&);

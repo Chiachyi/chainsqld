@@ -624,6 +624,49 @@ bool TableSync::ReadSyncDB(std::string nameInDB, LedgerIndex &txnseq, uint256 &t
     return app_.getTableStatusDB().ReadSyncDB(nameInDB, txnseq, txnhash, seq, hash, txnupdatehash);
 }
 
+std::pair<bool, std::string> TableSync::CreateSingleItemFromAPI(AccountID ownerActID, std::string tablename)
+{
+    std::shared_ptr<TableSyncItem> pItem = NULL;
+    AccountID userActID;
+    SecretKey secret_key;
+
+    HardEncrypt* hEObj = HardEncryptObj::getInstance();
+    if (hEObj != NULL)
+    {
+        auto syncTabKey = getPubAddrInCard(hEObj->syncTableKey, SYNC_TABLE_KEY_INDEX);
+        userActID = *ripple::parseBase58<AccountID>(syncTabKey.second);
+		//SecretKey tempSecKey(Slice(nullptr, 0));
+		char* temp4Secret = new char[32];
+		memset(temp4Secret, SYNC_TABLE_KEY_INDEX, 32);
+		SecretKey tempSecKey(Slice(temp4Secret, 32));
+		tempSecKey.encrytCardIndex = SYNC_TABLE_KEY_INDEX;
+		tempSecKey.keyTypeInt = hEObj->gmInCard;
+		hEObj->getPrivateKeyRight(SYNC_TABLE_KEY_INDEX);
+		secret_key = tempSecKey;
+		delete[] temp4Secret;
+    }
+    // if (isExist(listTableInfo_, ownerActID, tablename, TableSyncItem::SyncTarget_db))
+    // {
+    //     JLOG(journal_.warn()) << tablename <<
+    //         "has been created, target type is " << TableSyncItem::SyncTarget_db;
+    //     sLastErr_ = tablename + " has been created";
+    //     return std::make_pair(false, sLastErr_);
+    // }		
+	
+    std::shared_ptr <TableSyncItem> pItemOld = NULL;
+    pItemOld = GetRightItem(ownerActID, tablename, "", TableSyncItem::SyncTarget_db,false);
+    if (pItemOld != NULL)
+    {
+        listTableInfo_.remove(pItemOld);
+    }
+    pItem = std::make_shared<TableSyncItem>(app_, journal_, cfg_, TableSyncItem::SyncTarget_db);
+    pItem->Init(ownerActID, tablename, userActID, secret_key, "", false);
+
+    listTableInfo_.push_back(pItem);
+
+    return std::make_pair(true, "");
+}
+
 //void TableSync::parseFormline
 
 std::pair<std::shared_ptr<TableSyncItem>, std::string> TableSync::CreateOneItem(TableSyncItem::SyncTargetType eTargeType, std::string line)
@@ -709,7 +752,7 @@ std::pair<std::shared_ptr<TableSyncItem>, std::string> TableSync::CreateOneItem(
     if (hEObj != NULL)
     {
         try
-        { 
+        {
             if(!user.empty() && !secret.empty())
             {
 				userAccountId = *ripple::parseBase58<AccountID>(user);
@@ -877,7 +920,7 @@ bool TableSync::CreateTableItems()
                 if (pItem->GetCondition().utime < std::stoi(time))
                     listTableInfo_.remove(pItem);
                 app_.getTableStatusDB().UpdateStateDB(owner, tablename, false);//update audoSync flag
-            }       
+            }
             else
 			{
 				std::shared_ptr<TableSyncItem> pAutoSynItem = std::make_shared<TableSyncItem>(app_, journal_, cfg_);

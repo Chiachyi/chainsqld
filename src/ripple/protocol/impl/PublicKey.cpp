@@ -385,40 +385,62 @@ encrypt(const Blob& passBlob,PublicKey const& publicKey)
 
 bool generateAddrAndPubFile(int pubType, int index, std::string filePath)
 {
-	HardEncrypt* hEObj = HardEncryptObj::getInstance();
 	std::string fileName = "";
+    std::pair<std::string, std::string> pubAddrRet = getPubAddrInCard(pubType, index);
+
+    HardEncrypt* hEObj = HardEncryptObj::getInstance();
+    if ( hEObj == NULL || pubAddrRet.first == "" || pubAddrRet.second == "" )
+    {
+        return false;
+    }
+
+	if (hEObj->syncTableKey == pubType)
+	{
+		fileName = "/synctablePub.txt";
+	}
+	else if (hEObj->nodeVerifyKey == pubType)
+	{
+		fileName = "/nodeverifyPub.txt";
+	}
+
+	std::string fileBuffer = pubAddrRet.first + "\r\n" + pubAddrRet.second + "\r\n";
+	if (filePath.empty())
+	{
+		filePath = hEObj->GetHomePath();
+		filePath += fileName;
+	}
+	hEObj->FileWrite(filePath.c_str(), "wb+", (unsigned char*)fileBuffer.c_str(), fileBuffer.size());
+	return true;
+}
+
+std::pair<std::string, std::string>
+getPubAddrInCard(int pubType, int index)
+{
+    HardEncrypt* hEObj = HardEncryptObj::getInstance();
 	unsigned char publicKeyTemp[PUBLIC_KEY_EXT_LEN] = { 0 };
+    std::string pubKeyStr = "";
+    std::string addrStr = "";
 	if (hEObj != NULL)
 	{
 		std::pair<unsigned char*, int> tempPublickey;
-		std::string pubKeyStr = "";
 		PublicKey* newPubKey = nullptr;
 		if (hEObj->syncTableKey == pubType)
 		{
 			tempPublickey = hEObj->getECCSyncTablePubKey(publicKeyTemp);
-			fileName = "/synctablePub.txt";
 			newPubKey = new PublicKey(Slice(tempPublickey.first, tempPublickey.second));
 			pubKeyStr = toBase58(TOKEN_ACCOUNT_PUBLIC, *newPubKey);
 		}
 		else if (hEObj->nodeVerifyKey == pubType)
 		{
-			tempPublickey = hEObj->getECCNodeVerifyPubKey(publicKeyTemp,index);
-			fileName = "/nodeverifyPub.txt";
+			tempPublickey = hEObj->getECCNodeVerifyPubKey(publicKeyTemp, index);
 			newPubKey = new PublicKey(Slice(tempPublickey.first, tempPublickey.second));
 			pubKeyStr = toBase58(TOKEN_NODE_PUBLIC, *newPubKey);
 		}
 
-		std::string addrStr = toBase58(calcAccountID(*newPubKey));
-		std::string fileBuffer = pubKeyStr + "\r\n" + addrStr + "\r\n";
-		if (filePath.empty())
-		{
-			filePath = hEObj->GetHomePath();
-			filePath += fileName;
-		}
-		hEObj->FileWrite(filePath.c_str(), "wb+", (unsigned char*)fileBuffer.c_str(), fileBuffer.size());
-		return true;
+		addrStr = toBase58(calcAccountID(*newPubKey));
 	}
-	return false;
+
+	return std::make_pair(pubKeyStr, addrStr);
 }
 
 NodeID

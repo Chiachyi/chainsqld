@@ -68,6 +68,8 @@ public:
     bool ReStartOneTable(AccountID accountID, std::string sNameInDB, std::string sTableName, bool bDrop, bool bCommit);
     bool StopOneTable(AccountID accountID, std::string sNameInDB, bool bNewTable);
 
+    std::pair<bool, std::string> CreateSingleItemFromAPI(AccountID ownerActID, std::string tablename);
+
 	std::pair<bool, std::string> StartDumpTable(std::string sPara, std::string sPath, TableDumpItem::funDumpCB funCB);
 	std::pair<bool, std::string> StopDumpTable(AccountID accountID, std::string sTableName);
 

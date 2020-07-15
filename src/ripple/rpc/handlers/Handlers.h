@@ -112,6 +112,10 @@ Json::Value doContractCall(RPC::Context&);
 //for gm algorithm data generation
 Json::Value doCreateRandom(RPC::Context&);
 Json::Value doCryptData(RPC::Context&);
+//for get public in cryptCard
+Json::Value doGetNodePub(RPC::Context&);
+Json::Value doGetSyncPub(RPC::Context&);
+Json::Value doAddEncTabToSync(RPC::Context&);
 
 } // ripple
 
