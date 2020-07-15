@@ -79,7 +79,7 @@ public:
 	};
 
 private:
-	GMCheck();
+	GMCheck(boost::beast::Journal gmCheckJournal);
 	void cipherConstruct(ripple::Blob &cipher);
 	void cipher2GMStand(unsigned char* cardCipher, unsigned char* gmStdCipher, unsigned int plainDataLen);
 	int dataFolderCheck(std::string foldername);
@@ -92,6 +92,8 @@ private:
 	
 private:
 	HardEncrypt* hEObj;
+    static std::unique_ptr <ripple::Logs> logs;
+    boost::beast::Journal gmCheckJournal_;
 	bool isRandomCycleCheckThread;
 	bool isRandomGenerateThread;
 	unsigned int parentTid;

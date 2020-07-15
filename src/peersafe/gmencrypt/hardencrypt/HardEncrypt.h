@@ -83,6 +83,7 @@ public:
 	enum SeckeyType { gmInCard, gmOutCard, comKey };
 	enum PubKeyType { syncTableKey, nodeVerifyKey };
 	enum SM4AlgType { ECB, CBC};
+    int nodeKeyIndex_;
 
 public:
     //SM3Hash &getSM3Obj();

@@ -1,5 +1,6 @@
 #include <peersafe/gmencrypt/hardencrypt/gmCheck.h>
 #include <peersafe/gmencrypt/randomcheck/randCheck.h>
+#include <iomanip>
 #include <string.h>
 #ifdef _WIN32
 #include <Windows.h>
@@ -165,7 +166,7 @@ const std::string g_sm4ECBPWD[] = { sm4ECBPWD1 ,sm4ECBPWD2 ,sm4ECBPWD3 };
 const std::string g_sm4ECBPlain[] = { sm4ECBPlain1 ,sm4ECBPlain2 ,sm4ECBPlain3 };
 const std::string g_sm4ECBCipher[] = { sm4ECBCipher1 ,sm4ECBCipher2 ,sm4ECBCipher3 };
 
-GMCheck::GMCheck()
+GMCheck::GMCheck(boost::beast::Journal gmCheckJournal):gmCheckJournal_(gmCheckJournal)
 {
 	hEObj = HardEncryptObj::getInstance();
 	isRandomCycleCheckThread = false;
@@ -219,10 +220,8 @@ bool GMCheck::sm2EncryptAndDecryptCheck(unsigned long plainDataLen)
 {
 	bool result = false;
 	int rv = 0;
-	printf("********************************\n");
-	printf("Beging SM2 Encrypt&Decrypt Check\n");
-	/*JLOG(journal_.info()) << "********************************";
-	JLOG(journal_.info()) << "Beging SM2 Encrypt&Decrypt Check";*/
+    JLOG(gmCheckJournal_.custom()) << "********************************";
+	JLOG(gmCheckJournal_.custom()) << "Beging SM2 Encrypt&Decrypt Check";
 	for (int i = 0; i < preDataSetCnt; ++i)
 	{
 		auto tempPri = ripple::strUnHex(g_PrivateED[i]).first;
@@ -244,14 +243,14 @@ bool GMCheck::sm2EncryptAndDecryptCheck(unsigned long plainDataLen)
 		}
 		if (memcmp(deResult, tempPlain.data(), tempPlain.size()))
 		{
-			printf("SM2 decrypt result comparision failed\n");
+			JLOG(gmCheckJournal_.custom()) << "SM2 decrypt result comparision failed";
 			//JLOG(journal_.error()) << "SM2 decrypt result comparision failed" ;
 			result = false;
 			return result;
 		}
 		else
 		{
-			printf("SM2 decrypt result comparision successful\n");
+			JLOG(gmCheckJournal_.custom()) << "SM2 decrypt result comparision successful";
 			//JLOG(journal_.error()) << "SM2 decrypt result comparision successful";
 			result = true;
 		}
@@ -275,13 +274,13 @@ bool GMCheck::sm2EncryptAndDecryptCheck(unsigned long plainDataLen)
 		}
 		if (memcmp(deResult, tempPlain.data(), tempPlain.size()))
 		{
-			printf("SM2 encrypt&decrypt check failed in %d times\n",i+1);
+			JLOG(gmCheckJournal_.custom()) << "SM2 encrypt&decrypt check failed in " << i+1 << " times";
 			result = false;
 			return result;
 		}
 		else
 		{
-			printf("SM2 encrypt&decrypt check successful in %d times\n",i+1);
+			JLOG(gmCheckJournal_.custom()) << "SM2 encrypt&decrypt check successful in " << i+1 << " times";
 			result = true;
 		}
 	}
@@ -292,8 +291,8 @@ bool GMCheck::sm2SignedAndVerifyCheck()
 {
 	bool result = false;
 	int rv = 0;
-	printf("********************************\n");
-	printf("Beging SM2 Signed&Verify Check\n");
+	JLOG(gmCheckJournal_.custom()) << "********************************";
+	JLOG(gmCheckJournal_.custom()) << "Beging SM2 Signed&Verify Check";
 	for (int i = 0; i < preDataSetCnt; ++i)
 	{
 		auto tempPri = ripple::strUnHex(g_PrivateSV[i]).first;
@@ -305,11 +304,11 @@ bool GMCheck::sm2SignedAndVerifyCheck()
 		rv = hEObj->SM2ECCVerify(pub4Verify, tempPlain.data(), tempPlain.size(),tempSigned.data(),tempSigned.size());
 		if (rv)
 		{
-			printf("SM2 verify check failed in %d times!\n", i+1);
+			JLOG(gmCheckJournal_.custom()) << "SM2 verify check failed in " << i+1 << " times";
 			result = false;
 			return result;
 		}
-		printf("SM2 verify successful in %d times\n", i+1);
+		JLOG(gmCheckJournal_.custom()) << "SM2 verify successful in " << i+1 << " times";
 
 		unsigned char pSignedBuf[256] = { 0 };
 		unsigned long signedLen = 256;
@@ -318,20 +317,20 @@ bool GMCheck::sm2SignedAndVerifyCheck()
 		rv = hEObj->SM2ECCSign(pri4SignInfo, pri4Sign, tempPlain.data(), tempPlain.size(), pSignedBuf, &signedLen);
 		if (rv)
 		{
-			printf("SM2 sign&verify check failed in %d times!\n", i+1);
+			JLOG(gmCheckJournal_.custom()) << "SM2 sign&verify check failed in " << i+1 << " times";
 			result = false;
 			return result;
 		}
 		rv = hEObj->SM2ECCVerify(pub4Verify, tempPlain.data(), tempPlain.size(), pSignedBuf, signedLen);
 		if (rv)
 		{
-			printf("SM2 sign&verify check failed in %d times!\n", i+1);
+			JLOG(gmCheckJournal_.custom()) << "SM2 sign&verify check failed in " << i+1 << " times";
 			result = false;
 			return result;
 		}
 		else
 		{
-			printf("SM2 sign&verify check successful in %d times!\n", i + 1);
+			JLOG(gmCheckJournal_.custom()) << "SM2 sign&verify check successful in " << i+1 << " times";
 			result = true;
 		}
 	}
@@ -341,8 +340,8 @@ bool GMCheck::sm2SignedAndVerifyCheck()
 bool GMCheck::sm3HashCheck()
 {
 	bool result = false;
-	printf("********************************\n");
-	printf("Beging SM3hash Check\n");
+	JLOG(gmCheckJournal_.custom()) << "********************************";
+	JLOG(gmCheckJournal_.custom()) << "Beging SM3hash Check";
 	for (int i = 0; i < preDataSetCnt; ++i)
 	{
 		auto tempPlain = ripple::strUnHex(g_sm3Plain[i]).first;
@@ -355,25 +354,25 @@ bool GMCheck::sm3HashCheck()
 		objSM3.SM3HashFinalFun(hashData, (unsigned long*)&HashDataLen);
 		if (memcmp(hashData, tempHash.data(), tempHash.size()))
 		{
-			printf("SM3 hash result comparision failed in %d times.\n",i+1);
+			JLOG(gmCheckJournal_.custom()) << "SM3 hash result comparision failed in " << i+1 << " times";
 			result = false;
 			return result;
 		}
 		else
 		{
-			printf("SM3 hash result comparision successful in %d times.\n",i+1);
+			JLOG(gmCheckJournal_.custom()) << "SM3 hash result comparision successful in " << i+1 << " times";
 			result = true;
 		}
 	}
-	printf("Finish SM3hash Check\n");
+	JLOG(gmCheckJournal_.custom()) << "Finish SM3hash Check";
 	return result;
 }
 
 bool GMCheck::sm4EncryptAndDecryptCheck(unsigned long plainDataLen)
 {
 	bool result = false;
-	printf("********************************\n");
-	printf("Beging SM4 Encrypt&Decrypt Check\n");
+	JLOG(gmCheckJournal_.custom()) << "********************************";
+	JLOG(gmCheckJournal_.custom()) << "Beging SM4 Encrypt&Decrypt Check";
 	unsigned char pKey[16] = { 0 };
 	unsigned long keyLen = 16;
 	for (int i = 0; i < preDataSetCnt; ++i)
@@ -385,11 +384,11 @@ bool GMCheck::sm4EncryptAndDecryptCheck(unsigned long plainDataLen)
 		unsigned long resultLen = tempPlain.size();
 		unsigned char* pCipherBuf = new unsigned char[2*cipherLen];
 		unsigned char* pResultPlain = new unsigned char[resultLen];
-		printf("Begin to encrypt data with SM4 for %d times\n",i+1);
+		JLOG(gmCheckJournal_.custom()) << "Begin to encrypt data with SM4 for" << i+1 << "times";
 		hEObj->SM4SymEncrypt(hEObj->ECB, tempPwd.data(), tempPwd.size(), tempPlain.data(), tempPlain.size(), pCipherBuf, &cipherLen);
 		if (memcmp(pCipherBuf, tempCipher.data(), tempCipher.size()))
 		{
-			printf("SM4 encrypt result comparision failed in %d times\n",i+1);
+			JLOG(gmCheckJournal_.custom()) << "SM4 encrypt result comparision failed in " << i+1 << " times";
 			result = false;
 			delete[] pCipherBuf;
 			delete[] pResultPlain;
@@ -397,14 +396,14 @@ bool GMCheck::sm4EncryptAndDecryptCheck(unsigned long plainDataLen)
 		}
 		else
 		{
-			printf("SM4 encrypt result comparision successful in %d times\n", i+1);
+			JLOG(gmCheckJournal_.custom()) << "SM4 encrypt result comparision successful in " << i+1 << " times";
 			result = true;
 		}
-		printf("Begin to decrypt data with SM4 in %d times\n",i+1);
+		JLOG(gmCheckJournal_.custom()) << "Begin to decrypt data with SM4 in " << i+1 << " times";
 		hEObj->SM4SymDecrypt(hEObj->ECB, tempPwd.data(), tempPwd.size(), pCipherBuf, cipherLen, pResultPlain, &resultLen);
 		if (memcmp(pResultPlain, tempPlain.data(), tempPlain.size()))
 		{
-			printf("SM4 decrypt result comparision failed in %d times\n", i+1);
+			JLOG(gmCheckJournal_.custom()) << "SM4 decrypt result comparision failed in " << i+1 << " times";
 			result = false;
 			delete[] pCipherBuf;
 			delete[] pResultPlain;
@@ -412,13 +411,13 @@ bool GMCheck::sm4EncryptAndDecryptCheck(unsigned long plainDataLen)
 		}
 		else
 		{
-			printf("SM4 encrypt&decrypt result comparision successful in %d times\n", i+1);
+			JLOG(gmCheckJournal_.custom()) << "SM4 encrypt&decrypt result comparision successful in " << i+1 << " times";
 			result = true;
 		}
 		delete[] pCipherBuf;
 		delete[] pResultPlain;
 	}
-	printf("SM4 encrypt&decrypt check successful\n");
+	JLOG(gmCheckJournal_.custom()) << "SM4 encrypt&decrypt check successful";
 	return result;
 }
 
@@ -430,14 +429,14 @@ bool GMCheck::randomCheck(unsigned long dataLen,unsigned long cycleTimes)
 	randomCheckRet = rcInstance->RandTest(hEObj, randomTestSetCnt, randomTestDataLen);
 	if (!randomCheckRet)
 	{
-		printf("first check failed, check again\n");
+		JLOG(gmCheckJournal_.custom()) << "first check failed, check again";
 		randomCheckRet = rcInstance->RandTest(hEObj, randomTestSetCnt, randomTestDataLen);
 	}
 	if (randomCheckRet)
 	{
-		printf("Random check successfully!\n");
+		JLOG(gmCheckJournal_.custom()) << "Random check successfully!";
 	}
-	else printf("Random check failed!\n");
+	else JLOG(gmCheckJournal_.custom()) << "Random check failed!";
 	
 	return randomCheckRet;
 }
@@ -449,17 +448,17 @@ void GMCheck::tryRandomCycleCheck(unsigned long ledgerSeq)
 	if (0 == ledgerSeq % randomCycheckLedgerNum)
 	//if (0 == ledgerSeq % 20)
 	{
-		printf("current ledgerSeq : %d, begin to do randomCycleCheck.\n", ledgerSeq);
+		JLOG(gmCheckJournal_.custom()) << "current ledgerSeq : " << ledgerSeq << ", begin to do randomCycleCheck.";
 		parentTid = pthread_self();
-		printf("tryRandomCycleCheck thread id:%u\n", parentTid);
+		JLOG(gmCheckJournal_.custom()) << "tryRandomCycleCheck thread id:" << parentTid;
 		unsigned int pid = getpid();
-		printf("tryRandomCycleCheck proc id:%u\n", pid);
+		JLOG(gmCheckJournal_.custom()) << "tryRandomCycleCheck proc id:" << pid;
 		if (!isRandomCycleCheckThread)
 		{
 			pthread_t id;
 			int ret = pthread_create(&id, NULL, randomCycheckThreadFun, (void*)this);
 			if (ret) {
-				printf("tryRandomCycleCheck create pthread error!");
+				JLOG(gmCheckJournal_.custom()) << "tryRandomCycleCheck create pthread error!";
 			}
 		}
 	}
@@ -474,7 +473,7 @@ void* GMCheck::randomCycheckThreadFun(void *arg) {
 	//randomCycleCheckRes = false;
 	if (!randomCycleCheckRes)
 	{
-		printf("randomCycleCheck prepare to close chainsql!");
+		//JLOG(gmCheckJournal_.custom()) << "randomCycleCheck prepare to close chainsql!";
 		//pthread_kill(ptrGMC->parentTid, SIGTERM);
 		pthread_kill(ptrGMC->parentTid, SIGKILL);
 	}
@@ -488,9 +487,9 @@ bool GMCheck::randomCycleCheck(unsigned long dataLen, unsigned long cycleTimes)
 #ifndef _WIN32
 	pthread_t tid;
 	tid = pthread_self();
-	printf("randomCycleCheck thread id:%u\n", tid);
+	JLOG(gmCheckJournal_.custom()) << "randomCycleCheck thread id:" << tid;
 	unsigned int pid = getpid();
-	printf("randomCycleCheck proc id:%u\n", pid);
+	JLOG(gmCheckJournal_.custom()) << "randomCycleCheck proc id:" << pid;
 	bool randomCycleCheckRet = false;
 	RandCheck* rcInstance = RandCheck::getInstance();
 	//rcInstance->setLogJournal(journal_);
@@ -499,14 +498,14 @@ bool GMCheck::randomCycleCheck(unsigned long dataLen, unsigned long cycleTimes)
 	randomCycleCheckRet = rcInstance->RandTest(hEObj, randomCycleCheckSetCnt, randomCycleCheckLen, true);
 	if (!randomCycleCheckRet)
 	{
-		printf("first cycle check failed, check again\n");
+		JLOG(gmCheckJournal_.custom()) << "first cycle check failed, check again!";
 		randomCycleCheckRet = rcInstance->RandTest(hEObj, randomCycleCheckSetCnt, randomCycleCheckLen, true);
 	}
 	if (randomCycleCheckRet)
 	{
-		printf("Random cycle check successfully!\n");
+		JLOG(gmCheckJournal_.custom()) << "Random cycle check successfully!";
 	}
-	else printf("Random cycle check failed!\n");
+	else JLOG(gmCheckJournal_.custom()) << "Random cycle check failed!";
 
 	return randomCycleCheckRet;
 #else
@@ -528,14 +527,14 @@ bool GMCheck::randomSingleCheck(unsigned long dataLen)
 	randomCheckRet = !rcInstance->RandomnessSingleCheck(pRandomBuf, randomLen);
 	if (!randomCheckRet)
 	{
-		printf("RandomnessSingleCheck first time failed, check again!\n");
+		JLOG(gmCheckJournal_.custom()) << "RandomnessSingleCheck first time failed, check again!";
 		randomCheckRet = !rcInstance->RandomnessSingleCheck(pRandomBuf, randomLen);
 	}
 	if (randomCheckRet)
 	{
-		printf("RandomnessSingleCheck successful\n");
+		JLOG(gmCheckJournal_.custom()) << "RandomnessSingleCheck successful";
 	}
-	else printf("RandomnessSingleCheck failed\n");
+	else JLOG(gmCheckJournal_.custom()) << "RandomnessSingleCheck failed";
 
 	return randomCheckRet;
 }
@@ -569,7 +568,7 @@ bool GMCheck::startAlgRanCheck(int checkType)
 		}
 		else return false;
 	default:
-		printf("The check type is wrong,please check!");
+		JLOG(gmCheckJournal_.custom()) << "The check type is wrong,please check!";
 		//JLOG(journal_.error()) << "The check type is wrong,please check!";
 		return false;
 	}
@@ -584,14 +583,14 @@ bool GMCheck::generateRandom2File()
 		pthread_t id;
 		int ret = pthread_create(&id, NULL, randomGenerateThreadFun, (void*)this);
 		if (ret) {
-			printf("generateRandom2File create pthread error!");
+			JLOG(gmCheckJournal_.custom()) << "generateRandom2File create pthread error!";
 			return false;
 		}
 		return true;
 	}
 	else
 	{
-		printf("Last random generate thread is not finished!");
+		JLOG(gmCheckJournal_.custom()) << "Last random generate thread is not finished!";
 		return false;
 	}
 #else
@@ -608,7 +607,7 @@ void* GMCheck::randomGenerateThreadFun(void *arg)
 	bool randomGenerateRes = ptrGMC->handleGenerateRandom2File();  
 	if (!randomGenerateRes)
 	{
-		printf("random generate failed!");
+		//JLOG(gmCheckJournal_.custom()) << "random generate failed!";
 	}
 
 	ptrGMC->isRandomGenerateThread = false;
@@ -624,7 +623,7 @@ bool GMCheck::handleGenerateRandom2File()
 	std::string pathName("./data/random/");
 	if (dataFolderCheck(pathName))
 	{
-		printf("生成data/random路径失败！\n");
+		JLOG(gmCheckJournal_.custom()) << "生成data/random路径失败！";
 		return false;
 	}
 	for (int i = 0; i<1000; i++)
@@ -638,15 +637,15 @@ bool GMCheck::handleGenerateRandom2File()
 				return false;
 			}
 		}
-		printf("\n++++++++++产生第%d个随机数文件成功++++++++++\n", i + 1);
+		JLOG(gmCheckJournal_.custom()) << "\n++++++++++产生第" << i + 1 << "个随机数文件成功++++++++++";
 		sprintf(pFileName, "./data/random/random%d", i);
 		if (!FileWrite(pFileName, "wb+", pbOutBuffer, 128 * 1024))
 		{
-			printf("random%d.dat文件生成失败\n", i);
+			JLOG(gmCheckJournal_.custom()) << "random" << i << ".dat文件生成失败";
 			return false;
 		};
 	}
-	printf("采集随机数数据完成。\n");
+	JLOG(gmCheckJournal_.custom()) << "采集随机数数据完成";
 	return true;
 }
 
@@ -660,17 +659,19 @@ int GMCheck::getDataSM4EncDec_CBC_Enc(int dataSetCnt, unsigned int plainLen)
 	char pFileName[128] = { 0x00 };
 	unsigned char newline[] = { 0x0D,0x0A }, blankSpace[] = { 0x20 }, equal[] = { 0x3D,0x20 };
 	
-	//printf("\n请输入要采集数据的组数：");
-	sprintf(pFileName, "data/SM4��֤����-����-%d-CBC.txt", dataSetCnt);
+	//JLOG(gmCheckJournal_.custom()) << "\n请输入要采集数据的组数：");
+	sprintf(pFileName, "data/SM4验证数据-加密-%d-CBC.txt", dataSetCnt);
 	FileWrite(pFileName, "wb", NULL, 0);
 	for (i = 0; i<dataSetCnt; i++)
 	{
-		printf("SM4对称加密解密数据采集。\n");
-		//printf("\n输入数据长度，必须为分组长度的整数倍(16~10K):");
+		JLOG(gmCheckJournal_.custom()) << "SM4对称加密解密数据采集。";
+		//JLOG(gmCheckJournal_.custom()) << "\n输入数据长度，必须为分组长度的整数倍(16~10K):");
 		rv = hEObj->GenerateRandom(16, pKey);
 		if (rv)
 		{
-			printf("生成随机密钥错误，错误码[0x%08x]\n", rv);
+			JLOG(gmCheckJournal_.custom()) << "生成随机密钥错误，错误码[" <<
+             std::setiosflags(std::ios::showbase|std::ios::hex|std::ios::right) <<
+             std::setw(8) << std::setfill('0') << rv << "]";
 			return rv;
 		}
 		FileWrite(pFileName, "ab", (unsigned char *)"密钥", 4);
@@ -682,7 +683,9 @@ int GMCheck::getDataSM4EncDec_CBC_Enc(int dataSetCnt, unsigned int plainLen)
 		rv = hEObj->GenerateRandom(16, pIV);
 		if (rv)
 		{
-			printf("生成随机PIV错误，错误码[0x%08x]\n", rv);
+			JLOG(gmCheckJournal_.custom()) << "生成随机PIV错误，错误码[" <<
+             std::setiosflags(std::ios::showbase|std::ios::hex|std::ios::right) <<
+             std::setw(8) << std::setfill('0') << rv << "]";
 			return rv;
 		}
 		FileWrite(pFileName, "ab", (unsigned char *)"IV", 2);
@@ -699,7 +702,9 @@ int GMCheck::getDataSM4EncDec_CBC_Enc(int dataSetCnt, unsigned int plainLen)
 		rv = hEObj->GenerateRandom(plainLen, pInData);
 		if (rv)
 		{
-			printf("生成随机明文错误，错误码[0x%08x]\n", rv);
+			JLOG(gmCheckJournal_.custom()) << "生成随机明文错误，错误码[" <<
+             std::setiosflags(std::ios::showbase|std::ios::hex|std::ios::right) <<
+             std::setw(8) << std::setfill('0') << rv << "]";
 			return rv;
 		}
 		FileWrite(pFileName, "ab", (unsigned char *)"明文", 4);
@@ -719,23 +724,25 @@ int GMCheck::getDataSM4EncDec_CBC_Enc(int dataSetCnt, unsigned int plainLen)
 		rv = hEObj->SM4SymDecrypt(hEObj->CBC, pKey, 16, pEncData, nEncDataLen, pOutData, (unsigned long*)&nOutDataLen);
 		if (rv)
 		{
-			printf("SGD_SMS4_CBC模式解密错误，错误码[0x%08x]\n", rv);
+			JLOG(gmCheckJournal_.custom()) << "SGD_SMS4_CBC模式解密错误，错误码[" << 
+             std::setiosflags(std::ios::showbase|std::ios::hex|std::ios::right) <<
+             std::setw(8) << std::setfill('0') << rv << "]";
 			return rv;
 		}
 		if ((nOutDataLen == plainLen) && (memcmp(pOutData, pInData, plainLen) == 0))
 		{
 			PrintData("SGD_SMS4_CBC->解密结果", pOutData, nOutDataLen, 16);
-			printf("SGD_SMS4_CBC运算结果：加密、解密及结果比较均正确。\n");
-			printf("\n");
-			printf("\n");
+			JLOG(gmCheckJournal_.custom()) << "SGD_SMS4_CBC运算结果：加密、解密及结果比较均正确。";
+			JLOG(gmCheckJournal_.custom()) << "\n";
+			JLOG(gmCheckJournal_.custom()) << "\n";
 		}
 		else
 		{
-			printf("SGD_SMS4_CBC运算结果：解密结果错误。\n");
+			JLOG(gmCheckJournal_.custom()) << "SGD_SMS4_CBC运算结果：解密结果错误。";
 		}
 
 	}
-	printf("采集SMS4对称加解密数据完成。\n");
+	JLOG(gmCheckJournal_.custom()) << "采集SMS4对称加解密数据完成。";
 	return 0;
 }
 //写文件 ：SM4验证数据-解密-X-CBC.txt
@@ -752,13 +759,15 @@ int GMCheck::getDataSM4EncDec_CBC_Dec(int dataSetCnt, unsigned int plainLen)
 	FileWrite(pFileName, "wb", NULL, 0);
 	for (i = 0; i<dataSetCnt; i++)
 	{
-		printf("\n");
-		printf("\n");
-		printf("SM4对称加密解密数据采集。\n");
+		JLOG(gmCheckJournal_.custom()) << "\n";
+		JLOG(gmCheckJournal_.custom()) << "\n";
+		JLOG(gmCheckJournal_.custom()) << "SM4对称加密解密数据采集。";
 		rv = hEObj->GenerateRandom(16, pKey);
 		if (rv)
 		{
-			printf("生成随机密钥错误，错误码[0x%08x]\n", rv);
+			JLOG(gmCheckJournal_.custom()) << "生成随机密钥错误，错误码[" <<
+             std::setiosflags(std::ios::showbase|std::ios::hex|std::ios::right) <<
+             std::setw(8) << std::setfill('0') << rv << "]";
 			return rv;
 		}
 		FileWrite(pFileName, "ab", (unsigned char *)"密钥", 4);
@@ -770,7 +779,9 @@ int GMCheck::getDataSM4EncDec_CBC_Dec(int dataSetCnt, unsigned int plainLen)
 		rv = hEObj->GenerateRandom(16, pIV);
 		if (rv)
 		{
-			printf("生成随机PIV错误，错误码[0x%08x]\n", rv);
+			JLOG(gmCheckJournal_.custom()) << "生成随机PIV错误，错误码[" << 
+             std::setiosflags(std::ios::showbase|std::ios::hex|std::ios::right) <<
+             std::setw(8) << std::setfill('0') << rv << "]";
 			return rv;
 		}
 		FileWrite(pFileName, "ab", (unsigned char *)"IV", 2);
@@ -787,13 +798,17 @@ int GMCheck::getDataSM4EncDec_CBC_Dec(int dataSetCnt, unsigned int plainLen)
 		rv = hEObj->GenerateRandom(plainLen, pInData);
 		if (rv)
 		{
-			printf("生成随机明文错误，错误码[0x%08x]\n", rv);
+			JLOG(gmCheckJournal_.custom()) << "生成随机明文错误，错误码[" << 
+             std::setiosflags(std::ios::showbase|std::ios::hex|std::ios::right) <<
+             std::setw(8) << std::setfill('0') << rv << "]";
 			return rv;
 		}
 		rv = hEObj->SM4SymEncrypt(hEObj->CBC,pKey, 16, pInData, plainLen, pEncData, (unsigned long*)&nEncDataLen);
 		if (rv)
 		{
-			printf("SGD_SMS4_CBC模式加密错误，错误码[0x%08x]\n", rv);
+			JLOG(gmCheckJournal_.custom()) << "SGD_SMS4_CBC模式加密错误，错误码[" <<
+             std::setiosflags(std::ios::showbase|std::ios::hex|std::ios::right) <<
+             std::setw(8) << std::setfill('0') << rv << "]";
 			return rv;
 		}
 		FileWrite(pFileName, "ab", (unsigned char *)"密文", 4);
@@ -805,19 +820,21 @@ int GMCheck::getDataSM4EncDec_CBC_Dec(int dataSetCnt, unsigned int plainLen)
 		rv = hEObj->SM4SymDecrypt(hEObj->CBC, pKey, 16, pEncData, nEncDataLen, pOutData, (unsigned long*)&nOutDataLen);
 		if (rv)
 		{
-			printf("SGD_SMS4_CBC模式解密错误，错误码[0x%08x]\n", rv);
+			JLOG(gmCheckJournal_.custom()) << "SGD_SMS4_CBC模式解密错误，错误码[" <<
+             std::setiosflags(std::ios::showbase|std::ios::hex|std::ios::right) <<
+             std::setw(8) << std::setfill('0') << rv << "]";
 			return rv;
 		}
 		if ((nOutDataLen == plainLen) && (memcmp(pOutData, pInData, plainLen) == 0))
 		{
 			PrintData("SGD_SMS4_CBC->解密结果", pOutData, nOutDataLen, 16);
-			printf("SGD_SMS4_CBC运算结果：加密、解密及结果比较均正确。\n");
-			printf("\n");
-			printf("\n");
+			JLOG(gmCheckJournal_.custom()) << "SGD_SMS4_CBC运算结果：加密、解密及结果比较均正确。";
+			JLOG(gmCheckJournal_.custom()) << "\n";
+			JLOG(gmCheckJournal_.custom()) << "\n";
 		}
 		else
 		{
-			printf("SGD_SMS4_CBC运算结果：解密结果错误。\n");
+			JLOG(gmCheckJournal_.custom()) << "SGD_SMS4_CBC运算结果：解密结果错误。";
 		}
 		FileWrite(pFileName, "ab", (unsigned char *)"明文", 4);
 		FileWrite(pFileName, "ab", equal, 2);
@@ -826,7 +843,7 @@ int GMCheck::getDataSM4EncDec_CBC_Dec(int dataSetCnt, unsigned int plainLen)
 		FileWrite(pFileName, "ab", newline, 2);
 		FileWrite(pFileName, "ab", newline, 2);
 	}
-	printf("采集SMS4对称加解密数据完成。\n");
+	JLOG(gmCheckJournal_.custom()) << "采集SMS4对称加解密数据完成。";
 	return 0;
 }
 //写文件 ：SM4验证数据-加密-X-ECB.txt
@@ -844,13 +861,15 @@ int GMCheck::getDataSM4EncDec_ECB_Enc(int dataSetCnt, unsigned int plainLen)
 	for (i = 0; i<dataSetCnt; i++)
 	{
 		unsigned plainLenTemp = plainLen * ((i % 5) + 1);
-		printf("\n");
-		printf("\n");
-		printf("SM4对称加密解密数据采集。\n");
+		JLOG(gmCheckJournal_.custom()) << "\n";
+		JLOG(gmCheckJournal_.custom()) << "\n";
+		JLOG(gmCheckJournal_.custom()) << "SM4对称加密解密数据采集。";
 		rv = hEObj->GenerateRandom(16, pKey);
 		if (rv)
 		{
-			printf("生成随机密钥错误，错误码[0x%08x]\n", rv);
+			JLOG(gmCheckJournal_.custom()) << "生成随机密钥错误，错误码[" <<
+             std::setiosflags(std::ios::showbase|std::ios::hex|std::ios::right) <<
+             std::setw(8) << std::setfill('0') << rv << "]";
 			return rv;
 		}
 		FileWrite(pFileName, "ab", (unsigned char *)"密钥", 4);
@@ -867,7 +886,9 @@ int GMCheck::getDataSM4EncDec_ECB_Enc(int dataSetCnt, unsigned int plainLen)
 		rv = hEObj->GenerateRandom(plainLenTemp, pInData);
 		if (rv)
 		{
-			printf("生成随机明文错误，错误码[0x%08x]\n", rv);
+			JLOG(gmCheckJournal_.custom()) << "生成随机明文错误，错误码[" <<
+             std::setiosflags(std::ios::showbase|std::ios::hex|std::ios::right) <<
+             std::setw(8) << std::setfill('0') << rv << "]";
 			return rv;
 		}
 		FileWrite(pFileName, "ab", (unsigned char *)"明文", 4);
@@ -879,7 +900,9 @@ int GMCheck::getDataSM4EncDec_ECB_Enc(int dataSetCnt, unsigned int plainLen)
 		rv = hEObj->SM4SymEncrypt(hEObj->ECB, pKey, 16, pInData, plainLenTemp, pEncData, (unsigned long*)&nEncDataLen);
 		if (rv)
 		{
-			printf("SGD_SMS4_ECB模式加密错误，错误码[0x%08x]\n", rv);
+			JLOG(gmCheckJournal_.custom()) << "SGD_SMS4_ECB模式加密错误，错误码[" <<
+             std::setiosflags(std::ios::showbase|std::ios::hex|std::ios::right) <<
+             std::setw(8) << std::setfill('0') << rv << "]";
 			return rv;
 		}
 		FileWrite(pFileName, "ab", (unsigned char *)"密文", 4);
@@ -893,22 +916,24 @@ int GMCheck::getDataSM4EncDec_ECB_Enc(int dataSetCnt, unsigned int plainLen)
 		rv = hEObj->SM4SymDecrypt(hEObj->ECB, pKey,16, pEncData, nEncDataLen, pOutData, (unsigned long*)&nOutDataLen);
 		if (rv)
 		{
-			printf("SGD_SMS4_ECB模式解密错误，错误码[0x%08x]\n", rv);
+			JLOG(gmCheckJournal_.custom()) << "SGD_SMS4_ECB模式解密错误，错误码[" <<
+             std::setiosflags(std::ios::showbase|std::ios::hex|std::ios::right) <<
+             std::setw(8) << std::setfill('0') << rv << "]";
 			return rv;
 		}
 		if ((nOutDataLen == plainLenTemp) && (memcmp(pOutData, pInData, plainLenTemp) == 0))
 		{
 			PrintData("SGD_SMS4_ECB->解密结果", pOutData, nOutDataLen, 16);
-			printf("SGD_SMS4_ECB运算结果：加密、解密及结果比较均正确。\n");
-			printf("\n");
-			printf("\n");
+			JLOG(gmCheckJournal_.custom()) << "SGD_SMS4_ECB运算结果：加密、解密及结果比较均正确。";
+			JLOG(gmCheckJournal_.custom()) << "\n";
+			JLOG(gmCheckJournal_.custom()) << "\n";
 		}
 		else
 		{
-			printf("SGD_SMS4_ECB运算结果：解密结果错误。\n");
+			JLOG(gmCheckJournal_.custom()) << "SGD_SMS4_ECB运算结果：解密结果错误。";
 		}
 	}
-	printf("采集SMS4对称加解密数据完成。\n");
+	JLOG(gmCheckJournal_.custom()) << "采集SMS4对称加解密数据完成。";
 	return 0;
 }
 //写文件 ：SM4验证数据-解密-X-ECB.txt
@@ -926,13 +951,15 @@ int GMCheck::getDataSM4EncDec_ECB_Dec(int dataSetCnt, unsigned int plainLen)
 	for (i = 0; i<dataSetCnt; i++)
 	{
 		unsigned plainLenTemp = plainLen * ((i % 5) + 1);
-		printf("\n");
-		printf("\n");
-		printf("SM4对称加密解密数据采集。\n");
+		JLOG(gmCheckJournal_.custom()) << "\n";
+		JLOG(gmCheckJournal_.custom()) << "\n";
+		JLOG(gmCheckJournal_.custom()) << "SM4对称加密解密数据采集。";
 		rv = hEObj->GenerateRandom(16, pKey);
 		if (rv)
 		{
-			printf("生成随机密钥错误，错误码[0x%08x]\n", rv);
+			JLOG(gmCheckJournal_.custom()) << "生成随机密钥错误，错误码[" <<
+             std::setiosflags(std::ios::showbase|std::ios::hex|std::ios::right) <<
+             std::setw(8) << std::setfill('0') << rv << "]";
 			return rv;
 		}
 		FileWrite(pFileName, "ab", (unsigned char *)"密钥", 4);
@@ -949,14 +976,18 @@ int GMCheck::getDataSM4EncDec_ECB_Dec(int dataSetCnt, unsigned int plainLen)
 		rv = hEObj->GenerateRandom(plainLenTemp, pInData);
 		if (rv)
 		{
-			printf("生成随机明文错误，错误码[0x%08x]\n", rv);
+			JLOG(gmCheckJournal_.custom()) << "生成随机明文错误，错误码[" <<
+             std::setiosflags(std::ios::showbase|std::ios::hex|std::ios::right) <<
+             std::setw(8) << std::setfill('0') << rv << "]";
 			return rv;
 		}
 
 		rv = hEObj->SM4SymEncrypt(hEObj->ECB, pKey,16, pInData, plainLenTemp, pEncData, (unsigned long*)&nEncDataLen);
 		if (rv)
 		{
-			printf("SGD_SMS4_ECB模式加密错误，错误码[0x%08x]\n", rv);
+			JLOG(gmCheckJournal_.custom()) << "SGD_SMS4_ECB模式加密错误，错误码[" <<
+             std::setiosflags(std::ios::showbase|std::ios::hex|std::ios::right) <<
+             std::setw(8) << std::setfill('0') << rv << "]";
 			return rv;
 		}
 		FileWrite(pFileName, "ab", (unsigned char *)"密文", 4);
@@ -968,19 +999,21 @@ int GMCheck::getDataSM4EncDec_ECB_Dec(int dataSetCnt, unsigned int plainLen)
 		rv = hEObj->SM4SymDecrypt(hEObj->ECB, pKey, 16, pEncData, nEncDataLen, pOutData, (unsigned long*)&nOutDataLen);
 		if (rv)
 		{
-			printf("SGD_SMS4_ECB模式解密错误，错误码[0x%08x]\n", rv);
+			JLOG(gmCheckJournal_.custom()) << "SGD_SMS4_ECB模式解密错误，错误码[" <<
+             std::setiosflags(std::ios::showbase|std::ios::hex|std::ios::right) <<
+             std::setw(8) << std::setfill('0') << rv << "]";
 			return rv;
 		}
 		if ((nOutDataLen == plainLenTemp) && (memcmp(pOutData, pInData, plainLenTemp) == 0))
 		{
 			PrintData("SGD_SMS4_ECB->解密结果", pOutData, nOutDataLen, 16);
-			printf("SGD_SMS4_ECB运算结果：加密、解密及结果比较均正确。\n");
-			printf("\n");
-			printf("\n");
+			JLOG(gmCheckJournal_.custom()) << "SGD_SMS4_ECB运算结果：加密、解密及结果比较均正确。";
+			JLOG(gmCheckJournal_.custom()) << "\n";
+			JLOG(gmCheckJournal_.custom()) << "\n";
 		}
 		else
 		{
-			printf("SGD_SMS4_ECB运算结果：解密结果错误。\n");
+			JLOG(gmCheckJournal_.custom()) << "SGD_SMS4_ECB运算结果：解密结果错误。";
 		}
 		FileWrite(pFileName, "ab", (unsigned char *)"明文", 4);
 		FileWrite(pFileName, "ab", equal, 2);
@@ -989,7 +1022,7 @@ int GMCheck::getDataSM4EncDec_ECB_Dec(int dataSetCnt, unsigned int plainLen)
 		FileWrite(pFileName, "ab", newline, 2);
 		FileWrite(pFileName, "ab", newline, 2);
 	}
-	printf("采集SMS4对称加解密数据完成。\n");
+	JLOG(gmCheckJournal_.custom()) << "采集SMS4对称加解密数据完成。";
 	return 0;
 }
 //SM2 加密
@@ -1013,22 +1046,26 @@ int GMCheck::getDataSM2EncDec_Enc(int dataSetCnt, unsigned int plainLen)
 		unsigned plainLenTemp = plainLen * ((i % 5) + 1);
 		unsigned int gmStdCipherLen = 96 + plainLenTemp;
 		unsigned char* pGMStdCipher = new unsigned char[gmStdCipherLen];
-		printf("\n");
-		printf("\n");
-		printf("SM2加密解密数据采集。\n");
+		JLOG(gmCheckJournal_.custom()) << "\n";
+		JLOG(gmCheckJournal_.custom()) << "\n";
+		JLOG(gmCheckJournal_.custom()) << "SM2加密解密数据采集。";
 		memset(pGMStdCipher, 0, gmStdCipherLen);
 
 		rv = hEObj->GenerateRandom(plainLenTemp, pInData);
 		if (rv)
 		{
-			printf("生成随机明文错误，错误码[0x%08x]\n", rv);
+			JLOG(gmCheckJournal_.custom()) << "生成随机明文错误，错误码[" <<
+             std::setiosflags(std::ios::showbase|std::ios::hex|std::ios::right) <<
+             std::setw(8) << std::setfill('0') << rv << "]";
 			break;
 			//return rv;
 		}
 		rv = hEObj->SM2GenECCKeyPair();
 		if (rv)
 		{
-			printf("生成随机SM2密钥对错误，错误码[0x%08x]\n", rv);
+			JLOG(gmCheckJournal_.custom()) << "生成随机SM2密钥对错误，错误码[" <<
+             std::setiosflags(std::ios::showbase|std::ios::hex|std::ios::right) <<
+             std::setw(8) << std::setfill('0') << rv << "]";
 			break;
 			//return rv;
 		}
@@ -1049,8 +1086,8 @@ int GMCheck::getDataSM2EncDec_Enc(int dataSetCnt, unsigned int plainLen)
 		FileWrite(pFileName, "ab", pTmpData, nTmpDataLen);
 		FileWrite(pFileName, "ab", newline, 2);
 
-		printf("\n");
-		printf("\n");
+		JLOG(gmCheckJournal_.custom()) << "\n";
+		JLOG(gmCheckJournal_.custom()) << "\n";
 		PrintData("SM2加密解密公钥", tempPublickey.first + 1, tempPublickey.second - 1, 16);
 		PrintData("SM2加密解密私钥", tempPrivatekey.first, tempPrivatekey.second, 16);
 		PrintData("SM2加密解密明文", pInData, plainLenTemp, 16);
@@ -1063,7 +1100,9 @@ int GMCheck::getDataSM2EncDec_Enc(int dataSetCnt, unsigned int plainLen)
 		rv = hEObj->SM2ECCEncrypt(tempPublickey, pInData, plainLenTemp, pCipherData,(unsigned long*)&cipherLen);
 		if (rv)
 		{
-			printf("SM2加密错误，错误码[0x%08x]\n", rv);
+			JLOG(gmCheckJournal_.custom()) << "SM2加密错误，错误码[" <<
+             std::setiosflags(std::ios::showbase|std::ios::hex|std::ios::right) <<
+             std::setw(8) << std::setfill('0') << rv << "]";
 			break;
 			//return rv;
 		}
@@ -1082,18 +1121,20 @@ int GMCheck::getDataSM2EncDec_Enc(int dataSetCnt, unsigned int plainLen)
 		rv = hEObj->SM2ECCDecrypt(pri4DecryptInfo, tempPrivatekey, pCipherData, cipherLen, pOutData, (unsigned long*)&nOutDataLen);
 		if (rv)
 		{
-			printf("SM2解密错误，错误码[0x%08x]\n", rv);
+			JLOG(gmCheckJournal_.custom()) << "SM2解密错误，错误码[" <<
+             std::setiosflags(std::ios::showbase|std::ios::hex|std::ios::right) <<
+             std::setw(8) << std::setfill('0') << rv << "]";
 			break;
 			//return rv;
 		}
 		PrintData("SM2->解密结果", pOutData, nOutDataLen, 16);
 		if (memcmp(pOutData, pInData, nOutDataLen))
 		{
-			printf("SM2加密解密结果比较失败。\n");
+			JLOG(gmCheckJournal_.custom()) << "SM2加密解密结果比较失败。";
 		}
 		else
 		{
-			printf("SM2加密解密结果比较成功。\n");
+			JLOG(gmCheckJournal_.custom()) << "SM2加密解密结果比较成功。";
 		}
 		//明文
 		FileWrite(pFileName, "ab", (unsigned char *)"明文", 4);
@@ -1104,7 +1145,7 @@ int GMCheck::getDataSM2EncDec_Enc(int dataSetCnt, unsigned int plainLen)
 		FileWrite(pFileName, "ab", newline, 2);
 		delete[] pGMStdCipher;
 	}
-	printf("采集SM2加密解密数据完成。\n");
+	JLOG(gmCheckJournal_.custom()) << "采集SM2加密解密数据完成。";
 	return rv;
 }
 //SM2 解密
@@ -1128,22 +1169,26 @@ int GMCheck::getDataSM2EncDec_Dec(int dataSetCnt, unsigned int plainLen)
 		unsigned plainLenTemp = plainLen * ((i % 5) + 1);
 		unsigned int gmStdCipherLen = 96 + plainLenTemp;
 		unsigned char* pGMStdCipher = new unsigned char[gmStdCipherLen];
-		printf("\n");
-		printf("\n");
-		printf("SM2加密解密数据采集。\n");
+		JLOG(gmCheckJournal_.custom()) << "\n";
+		JLOG(gmCheckJournal_.custom()) << "\n";
+		JLOG(gmCheckJournal_.custom()) << "SM2加密解密数据采集。";
 		memset(pGMStdCipher, 0, gmStdCipherLen);
 
 		rv = hEObj->GenerateRandom(plainLenTemp, pInData);
 		if (rv)
 		{
-			printf("生成随机明文错误，错误码[0x%08x]\n", rv);
+			JLOG(gmCheckJournal_.custom()) << "生成随机明文错误，错误码[" <<
+             std::setiosflags(std::ios::showbase|std::ios::hex|std::ios::right) <<
+             std::setw(8) << std::setfill('0') << rv << "]";
 			break;
 			//return rv;
 		}
 		rv = hEObj->SM2GenECCKeyPair();
 		if (rv)
 		{
-			printf("生成随机SM2密钥对错误，错误码[0x%08x]\n", rv);
+			JLOG(gmCheckJournal_.custom()) << "生成随机SM2密钥对错误，错误码[" <<
+             std::setiosflags(std::ios::showbase|std::ios::hex|std::ios::right) <<
+             std::setw(8) << std::setfill('0') << rv << "]";
 			break;
 			//return rv;
 		}
@@ -1163,8 +1208,8 @@ int GMCheck::getDataSM2EncDec_Dec(int dataSetCnt, unsigned int plainLen)
 		FileWrite(pFileName, "ab", pTmpData, nTmpDataLen);
 		FileWrite(pFileName, "ab", newline, 2);
 
-		printf("\n");
-		printf("\n");
+		JLOG(gmCheckJournal_.custom()) << "\n";
+		JLOG(gmCheckJournal_.custom()) << "\n";
 		PrintData("SM2加密解密公钥", tempPublickey.first + 1, tempPublickey.second - 1, 16);
 		PrintData("SM2加密解密私钥", tempPrivatekey.first, tempPrivatekey.second, 16);
 		PrintData("SM2加密解密明文", pInData, plainLenTemp, 16);
@@ -1178,7 +1223,9 @@ int GMCheck::getDataSM2EncDec_Dec(int dataSetCnt, unsigned int plainLen)
 		rv = hEObj->SM2ECCEncrypt(tempPublickey, pInData, plainLenTemp, pCipherData, (unsigned long*)&cipherLen);
 		if (rv)
 		{
-			printf("SM2加密错误，错误码[0x%08x]\n", rv);
+			JLOG(gmCheckJournal_.custom()) << "SM2加密错误，错误码[" <<
+             std::setiosflags(std::ios::showbase|std::ios::hex|std::ios::right) <<
+             std::setw(8) << std::setfill('0') << rv << "]";
 			break;
 			//return rv;
 		}
@@ -1196,18 +1243,20 @@ int GMCheck::getDataSM2EncDec_Dec(int dataSetCnt, unsigned int plainLen)
 		rv = hEObj->SM2ECCDecrypt(pri4DecryptInfo, tempPrivatekey, pCipherData, cipherLen, pOutData, (unsigned long*)&nOutDataLen);
 		if (rv)
 		{
-			printf("SM2解密错误，错误码[0x%08x]\n", rv);
+			JLOG(gmCheckJournal_.custom()) << "SM2解密错误，错误码[" <<
+             std::setiosflags(std::ios::showbase|std::ios::hex|std::ios::right) <<
+             std::setw(8) << std::setfill('0') << rv << "]";
 			break;
 			//return rv;
 		}
 		PrintData("SM2->解密结果", pOutData, nOutDataLen, 16);
 		if (memcmp(pOutData, pInData, nOutDataLen))
 		{
-			printf("SM2加密解密结果比较失败。\n");
+			JLOG(gmCheckJournal_.custom()) << "SM2加密解密结果比较失败。";
 		}
 		else
 		{
-			printf("SM2加密解密结果比较成功。\n");
+			JLOG(gmCheckJournal_.custom()) << "SM2加密解密结果比较成功。";
 		}
 		//明文
 		FileWrite(pFileName, "ab", (unsigned char *)"明文", 4);
@@ -1218,7 +1267,7 @@ int GMCheck::getDataSM2EncDec_Dec(int dataSetCnt, unsigned int plainLen)
 		FileWrite(pFileName, "ab", newline, 2);
 		delete[] pGMStdCipher;
 	}
-	printf("采集SM2加密解密数据完成。\n");
+	JLOG(gmCheckJournal_.custom()) << "采集SM2加密解密数据完成。";
 	return 0;
 }
 //SM2 签名数据 有预处理
@@ -1233,28 +1282,32 @@ int GMCheck::getDataSM2Sign(int dataSetCnt, unsigned int plainLen)
 	char pFileName[128] = { 0x00 };
 	unsigned char newline[] = { 0x0D,0x0A }, equal[] = { 0x3D,0x20 };
 
-	//printf("\n请输入要采集数据的组数：");
+	//JLOG(gmCheckJournal_.custom()) << "\n请输入要采集数据的组数：");
 	sprintf(pFileName, "data/SM2签名-预处理后-%d.txt", dataSetCnt);
 	FileWrite(pFileName, "wb", NULL, 0);
 
 	for (i = 0; i<dataSetCnt; i++)
 	{
-		printf("\n");
-		printf("\n");
-		printf("SM2签名数据采集。\n");
-		//printf("\n输入数据长度(32~256):");
+		JLOG(gmCheckJournal_.custom()) << "\n";
+		JLOG(gmCheckJournal_.custom()) << "\n";
+		JLOG(gmCheckJournal_.custom()) << "SM2签名数据采集。";
+		//JLOG(gmCheckJournal_.custom()) << "\n输入数据长度(32~256):");
 		
 		rv = hEObj->GenerateRandom(plainLen, pInData);
 		if (rv)
 		{
-			printf("生成随机明文错误，错误码[0x%08x]\n", rv);
+			JLOG(gmCheckJournal_.custom()) << "生成随机明文错误，错误码[" <<
+             std::setiosflags(std::ios::showbase|std::ios::hex|std::ios::right) <<
+             std::setw(8) << std::setfill('0') << rv << "]";
 			break;
 			//return rv;
 		}
 		rv = hEObj->SM2GenECCKeyPair();
 		if (rv)
 		{
-			printf("生成随机SM2密钥对错误，错误码[0x%08x]\n", rv);
+			JLOG(gmCheckJournal_.custom()) << "生成随机SM2密钥对错误，错误码[" <<
+             std::setiosflags(std::ios::showbase|std::ios::hex|std::ios::right) <<
+             std::setw(8) << std::setfill('0') << rv << "]";
 			break;
 			//return rv;
 		}
@@ -1272,8 +1325,8 @@ int GMCheck::getDataSM2Sign(int dataSetCnt, unsigned int plainLen)
 		Data_Bin2Txt(tempPrivatekey.first, tempPrivatekey.second, (char*)pTmpData, (int*)&nTmpDataLen);
 		FileWrite(pFileName, "ab", pTmpData, nTmpDataLen);
 		FileWrite(pFileName, "ab", newline, 2);
-		printf("\n");
-		printf("\n");
+		JLOG(gmCheckJournal_.custom()) << "\n";
+		JLOG(gmCheckJournal_.custom()) << "\n";
 		PrintData("SM2签名验签公钥", tempPublickey.first + 1, tempPublickey.second - 1, 16);
 		PrintData("SM2签名验签私钥", tempPrivatekey.first, tempPrivatekey.second, 16);
 		PrintData("SM2签名验签明文", pInData, plainLen, 16);
@@ -1297,7 +1350,7 @@ int GMCheck::getDataSM2Sign(int dataSetCnt, unsigned int plainLen)
 		rv = hEObj->SM3HashTotal(pInData, plainLen, hashData, &hashDataLen);
 		if (rv)
 		{
-			printf("SM3杂凑处理错误\n");
+			JLOG(gmCheckJournal_.custom()) << "SM3杂凑处理错误";
 			break;
 			//return rv;
 		}
@@ -1312,7 +1365,9 @@ int GMCheck::getDataSM2Sign(int dataSetCnt, unsigned int plainLen)
 		rv = hEObj->SM2ECCSign(pri4SignInfo, tempPrivatekey, hashData, hashDataLen, pSignedBuf,&signedLen);
 		if (rv)
 		{
-			printf("SM2签名错误，错误码[0x%08x]\n", rv);
+			JLOG(gmCheckJournal_.custom()) << "SM2签名错误，错误码[" <<
+             std::setiosflags(std::ios::showbase|std::ios::hex|std::ios::right) <<
+             std::setw(8) << std::setfill('0') << rv << "]";
 			break;
 			//return rv;
 		}
@@ -1328,17 +1383,19 @@ int GMCheck::getDataSM2Sign(int dataSetCnt, unsigned int plainLen)
 		rv = hEObj->SM2ECCVerify(tempPublickey, hashData, hashDataLen, pSignedBuf, signedLen);
 		if (rv)
 		{
-			printf("SM2验证签名错误，错误码[0x%08x]\n", rv);
+			JLOG(gmCheckJournal_.custom()) << "SM2验证签名错误，错误码[" <<
+             std::setiosflags(std::ios::showbase|std::ios::hex|std::ios::right) <<
+             std::setw(8) << std::setfill('0') << rv << "]";
 			break;
 			//return rv;
 		}
 		else
 		{
-			printf("SM2验证签名正确。\n");
+			JLOG(gmCheckJournal_.custom()) << "SM2验证签名正确。";
 		}
 	}
 	delete[] pSignedBuf;
-	printf("采集SM2签名验签数据完成。\n");
+	JLOG(gmCheckJournal_.custom()) << "采集SM2签名验签数据完成。";
 	return rv;
 }
 
@@ -1346,10 +1403,10 @@ int GMCheck::getDataSM2Verify(int dataSetCnt, unsigned int plainLen)
 {
 	int rv = 0;
 	int i = 0;
-	unsigned char pInData[10240], pTmpData[10240], pucID[256], pHashData[32];
+	unsigned char pInData[10240], pTmpData[10240], pucID[256];
 	unsigned long signedLen = 64;
 	unsigned char* pSignedBuf = new unsigned char[signedLen];
-	unsigned int nTmpDataLen, nHashDateLen = 32;
+	unsigned int nTmpDataLen;
 	char pFileName[128] = { 0x00 };
 	unsigned char newline[] = { 0x0D,0x0A }, equal[] = { 0x3D,0x20 };
 
@@ -1358,22 +1415,26 @@ int GMCheck::getDataSM2Verify(int dataSetCnt, unsigned int plainLen)
 
 	for (i = 0; i<dataSetCnt; i++)
 	{
-		printf("\n");
-		printf("\n");
-		printf("SM2验签数据采集。\n");
-		//printf("\n输入数据长度(32~256):");
+		JLOG(gmCheckJournal_.custom()) << "\n";
+		JLOG(gmCheckJournal_.custom()) << "\n";
+		JLOG(gmCheckJournal_.custom()) << "SM2验签数据采集。";
+		//JLOG(gmCheckJournal_.custom()) << "\n输入数据长度(32~256):");
 
 		rv = hEObj->GenerateRandom(plainLen, pInData);
 		if (rv)
 		{
-			printf("生成随机明文错误，错误码[0x%08x]\n", rv);
+			JLOG(gmCheckJournal_.custom()) << "生成随机明文错误，错误码[" <<
+             std::setiosflags(std::ios::showbase|std::ios::hex|std::ios::right) <<
+             std::setw(8) << std::setfill('0') << rv << "]";
 			break;
 			//return rv;
 		}
 		rv = hEObj->SM2GenECCKeyPair();
 		if (rv)
 		{
-			printf("生成随机SM2密钥对错误，错误码[0x%08x]\n", rv);
+			JLOG(gmCheckJournal_.custom()) << "生成随机SM2密钥对错误，错误码[" <<
+             std::setiosflags(std::ios::showbase|std::ios::hex|std::ios::right) <<
+             std::setw(8) << std::setfill('0') << rv << "]";
 			break;
 			//return rv;
 		}
@@ -1391,8 +1452,8 @@ int GMCheck::getDataSM2Verify(int dataSetCnt, unsigned int plainLen)
 		Data_Bin2Txt(tempPrivatekey.first, tempPrivatekey.second, (char*)pTmpData, (int*)&nTmpDataLen);
 		FileWrite(pFileName, "ab", pTmpData, nTmpDataLen);
 		FileWrite(pFileName, "ab", newline, 2);
-		printf("\n");
-		printf("\n");
+		JLOG(gmCheckJournal_.custom()) << "\n";
+		JLOG(gmCheckJournal_.custom()) << "\n";
 		PrintData("SM2签名验签公钥", tempPublickey.first + 1, tempPublickey.second - 1, 16);
 		PrintData("SM2签名验签私钥", tempPrivatekey.first, tempPrivatekey.second, 16);
 		PrintData("SM2签名验签明文", pInData, plainLen, 16);
@@ -1400,7 +1461,7 @@ int GMCheck::getDataSM2Verify(int dataSetCnt, unsigned int plainLen)
 		//rv = hEObj->GenerateRandom(plainLen, pucID);
 		//if (rv)
 		//{
-		//	printf("生成随机ID错误，错误码[0x%08x]\n", rv);
+		//	JLOG(gmCheckJournal_.custom()) << "生成随机ID错误，错误码[0x%08x]\n", rv);
 		//	return rv;
 		//}
 		////签名者ID
@@ -1429,7 +1490,7 @@ int GMCheck::getDataSM2Verify(int dataSetCnt, unsigned int plainLen)
 		rv = hEObj->SM3HashTotal(pInData, plainLen, hashData, &hashDataLen);
 		if (rv)
 		{
-			printf("SM3杂凑处理错误\n");
+			JLOG(gmCheckJournal_.custom()) << "SM3杂凑处理错误";
 			break;
 			//return rv;
 		}
@@ -1444,7 +1505,9 @@ int GMCheck::getDataSM2Verify(int dataSetCnt, unsigned int plainLen)
 		rv = hEObj->SM2ECCSign(pri4SignInfo, tempPrivatekey, hashData, hashDataLen, pSignedBuf, &signedLen);
 		if (rv)
 		{
-			printf("SM2签名错误，错误码[0x%08x]\n", rv);
+			JLOG(gmCheckJournal_.custom()) << "SM2签名错误，错误码[" <<
+             std::setiosflags(std::ios::showbase|std::ios::hex|std::ios::right) <<
+             std::setw(8) << std::setfill('0') << rv << "]";
 			break;
 			//return rv;
 		}
@@ -1460,17 +1523,19 @@ int GMCheck::getDataSM2Verify(int dataSetCnt, unsigned int plainLen)
 		rv = hEObj->SM2ECCVerify(tempPublickey, hashData, hashDataLen, pSignedBuf, signedLen);
 		if (rv)
 		{
-			printf("SM2验证签名错误，错误码[0x%08x]\n", rv);
+			JLOG(gmCheckJournal_.custom()) << "SM2验证签名错误，错误码[" <<
+             std::setiosflags(std::ios::showbase|std::ios::hex|std::ios::right) <<
+             std::setw(8) << std::setfill('0') << rv << "]";
 			break;
 			//return rv;
 		}
 		else
 		{
-			printf("SM2验证签名正确。\n");
+			JLOG(gmCheckJournal_.custom()) << "SM2验证签名正确。";
 		}
 	}
 	delete[] pSignedBuf;
-	printf("采集SM2签名验签数据完成。\n");
+	JLOG(gmCheckJournal_.custom()) << "采集SM2签名验签数据完成。";
 	return rv;
 }
 //SM2 密钥对生成
@@ -1483,19 +1548,21 @@ int GMCheck::getDataSM2KeyPair(int dataSetCnt)
 	char pFileName[128] = { 0x00 };
 	unsigned char newline[] = { 0x0D,0x0A }, equal[] = { 0x3D,0x20 };
 
-	//printf("\n请输入要采集数据的组数：");
+	//JLOG(gmCheckJournal_.custom()) << "\n请输入要采集数据的组数：");
 	sprintf(pFileName, "data/SM2_密钥对生产_%d.txt", dataSetCnt);
 	FileWrite(pFileName, "wb", NULL, 0);
 
 	for (i = 0; i<dataSetCnt; i++)
 	{
-		printf("\n");
-		printf("\n");
-		printf("++++++++++产生SM2密钥对，第%d组++++++++++\n", i + 1);
+		JLOG(gmCheckJournal_.custom()) << "\n";
+		JLOG(gmCheckJournal_.custom()) << "\n";
+		JLOG(gmCheckJournal_.custom()) << "++++++++++产生SM2密钥对，第 " << i + 1 << " 组++++++++++";
 		rv = hEObj->SM2GenECCKeyPair();
 		if (rv)
 		{
-			printf("生成随机SM2密钥对错误，错误码[0x%08x]\n", rv);
+			JLOG(gmCheckJournal_.custom()) << "生成随机SM2密钥对错误，错误码[" <<
+             std::setiosflags(std::ios::showbase|std::ios::hex|std::ios::right) <<
+             std::setw(8) << std::setfill('0') << rv << "]";
 			return rv;
 		}
 		std::pair<unsigned char*, int> tempPublickey = hEObj->getPublicKey();
@@ -1513,12 +1580,12 @@ int GMCheck::getDataSM2KeyPair(int dataSetCnt)
 		FileWrite(pFileName, "ab", pTmpData, nTmpDataLen);
 		FileWrite(pFileName, "ab", newline, 2);
 		FileWrite(pFileName, "ab", newline, 2);
-		printf("\n");
-		printf("\n");
+		JLOG(gmCheckJournal_.custom()) << "\n";
+		JLOG(gmCheckJournal_.custom()) << "\n";
 		PrintData("SM2签名验签公钥", tempPublickey.first + 1, tempPublickey.second - 1, 16);
 		PrintData("SM2签名验签私钥", tempPrivatekey.first, tempPrivatekey.second, 16);
 	}
-	printf("SM2密钥对数据采集完成。\n");
+	JLOG(gmCheckJournal_.custom()) << "SM2密钥对数据采集完成。";
 	return 0;
 }
 //SM3 杂凑
@@ -1532,21 +1599,23 @@ int GMCheck::getDataSM3(int dataSetCnt, unsigned int plainLen)
 	unsigned char newline[] = { 0x0D,0x0A }, equal[] = { 0x3D,0x20 };
 
 	HardEncrypt::SM3Hash objSM3(hEObj);
-	//printf("\n请输入要采集数据的组数：");
+	//JLOG(gmCheckJournal_.custom()) << "\n请输入要采集数据的组数：");
 	sprintf(pFileName, "data/SM3杂凑验证-%d.txt", dataSetCnt);
 	FileWrite(pFileName, "wb", NULL, 0);
 	for (i = 0; i<dataSetCnt; i++)
 	{
 		unsigned plainLenTemp = plainLen * ((i % 5) + 1);
-		printf("\n");
-		printf("\n");
-		printf("SM3杂凑数据采集。\n");
-		//printf("请选择输入数据的长度(16~8000)。\n");
+		JLOG(gmCheckJournal_.custom()) << "\n";
+		JLOG(gmCheckJournal_.custom()) << "\n";
+		JLOG(gmCheckJournal_.custom()) << "SM3杂凑数据采集。";
+		//JLOG(gmCheckJournal_.custom()) << "请选择输入数据的长度(16~8000)。\n");
 		
 		rv = hEObj->GenerateRandom(plainLenTemp, pInData);
 		if (rv)
 		{
-			printf("生成随机明文错误，错误码[0x%08x]\n", rv);
+			JLOG(gmCheckJournal_.custom()) << "生成随机明文错误，错误码[" <<
+             std::setiosflags(std::ios::showbase|std::ios::hex|std::ios::right) <<
+             std::setw(8) << std::setfill('0') << rv << "]";
 			return rv;
 		}
 		//消息长度
@@ -1565,8 +1634,6 @@ int GMCheck::getDataSM3(int dataSetCnt, unsigned int plainLen)
 
 		PrintData("SM3杂凑_明文", pInData, plainLenTemp, 16);
 		
-		unsigned char hashData[32] = { 0 };
-		int HashDataLen = 0;
 		objSM3.SM3HashInitFun();
 		objSM3(pInData, plainLenTemp);
 		objSM3.SM3HashFinalFun(pHashData, (unsigned long*)&nHashDateLen);
@@ -1579,9 +1646,9 @@ int GMCheck::getDataSM3(int dataSetCnt, unsigned int plainLen)
 		FileWrite(pFileName, "ab", pTmpData, nTmpDataLen);
 		FileWrite(pFileName, "ab", newline, 2);
 		FileWrite(pFileName, "ab", newline, 2);
-		printf("SM3杂凑成功。\n");
+		JLOG(gmCheckJournal_.custom()) << "SM3杂凑成功。";
 	}
-	printf("采集SM3杂凑数据完成。\n");
+	JLOG(gmCheckJournal_.custom()) << "采集SM3杂凑数据完成。";
 	return 0;
 }
 
@@ -1611,7 +1678,7 @@ std::pair<bool, std::string> GMCheck::getAlgTypeData(int algType, int dataSetCnt
 	if (dataFolderCheck(pathName))
 	{
 		errMsg = "生成data路径失败!";
-		printf("%s\n", errMsg.c_str());
+		JLOG(gmCheckJournal_.custom()) << errMsg;
 		return std::make_pair(false, errMsg);
 	}
 
@@ -1749,36 +1816,42 @@ int GMCheck::PrintData(char *itemName, unsigned char *sourceData, unsigned int d
 		return -1;
 
 	if (itemName != NULL)
-		printf("%s[%d]:\n", itemName, dataLength);
+		JLOG(gmCheckJournal_.custom()) << itemName << "[" << dataLength << "]:";
 
 	for (i = 0; i<(int)(dataLength / rowCount); i++)
 	{
-		printf("%08x  ", i*rowCount);
+		JLOG(gmCheckJournal_.custom()) << std::setiosflags(std::ios::showbase|std::ios::hex|std::ios::right) <<
+             std::setw(8) << std::setfill('0') << i*rowCount;
 		for (j = 0; j<(int)rowCount; j++)
 		{
-			printf("%02x ", *(sourceData + i*rowCount + j));
+			JLOG(gmCheckJournal_.custom()) << std::setiosflags(std::ios::showbase|std::ios::hex|std::ios::right) <<
+             std::setfill('0') << std::setw(2) << *(sourceData + i*rowCount + j);
 		}
 
-		printf("\n");
+		JLOG(gmCheckJournal_.custom()) << "\n";
 	}
 	if (!(dataLength%rowCount))
 		return 0;
 
-	printf("%08x  ", (dataLength / rowCount)*rowCount);
+	JLOG(gmCheckJournal_.custom()) << std::setiosflags(std::ios::showbase|std::ios::hex|std::ios::right) <<
+     std::setw(8) << std::setfill('0') << ((dataLength / rowCount)*rowCount);
 	for (j = 0; j<(int)(dataLength%rowCount); j++)
 	{
-		printf("%02x ", *(sourceData + (dataLength / rowCount)*rowCount + j));
+		JLOG(gmCheckJournal_.custom()) << std::setiosflags(std::ios::showbase|std::ios::hex|std::ios::right) <<
+             std::setfill('0') << std::setw(2) << *(sourceData + (dataLength / rowCount)*rowCount + j);
 	}
-	printf("\n");
+	JLOG(gmCheckJournal_.custom()) << "\n";
 	return 0;
 }
 
 GMCheck* GMCheck::gmInstance = nullptr;
+std::unique_ptr <ripple::Logs> GMCheck::logs = nullptr;
 GMCheck* GMCheck::getInstance()
 {
 	if (gmInstance == nullptr)
 	{
-		gmInstance = new GMCheck();
+        logs = std::make_unique<ripple::Logs>(boost::beast::severities::kCustom);
+		gmInstance = new GMCheck(logs->journal("GMCheck"));
 	}
 	return gmInstance;
 }
