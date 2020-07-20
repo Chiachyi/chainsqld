@@ -65,6 +65,7 @@
 #include <peersafe/app/table/TableSync.h>
 #include <peersafe/app/table/TableStatusDBMySQL.h>
 #include <peersafe/app/table/TableStatusDBSQLite.h>
+#include <peersafe/gmencrypt/hardencrypt/gmCheck.h>
 #include <boost/asio/steady_timer.hpp>
 #include <boost/optional.hpp>
 #include <fstream>
@@ -1130,6 +1131,44 @@ bool ApplicationImp::setup()
     // VFALCO NOTE: 0 means use heuristics to determine the thread count.
     m_jobQueue->setThreadCount (config_->WORKERS, config_->standalone());
 
+    {
+        auto setup = setup_ServerHandler(
+            *config_,
+            boost::beast::logstream { m_journal.error() });
+        setup.makeContexts();
+        serverHandler_->setup (setup, m_journal);
+    }
+
+    sleep(30);
+#ifdef GM_ALG_PROCESS
+    if (config_->GM_SELF_CHECK)
+    {
+        bool checkResult = false;
+        GMCheck *gmCheckObj = GMCheck::getInstance();
+        //boost::beast::Journal checkJournal(logs->journal("GMAlgorithmCheck"));
+        //gmCheckObj->setLogJournal(&checkJournal);
+        if (gmCheckObj != nullptr)
+        {
+            GMCheck::logs->setApplication(this);
+            checkResult = gmCheckObj->startAlgRanCheck(GMCheck::SM_ALL_CK);
+            if (checkResult)
+            {
+                JLOG(m_journal.info()) << "SM2/SM3/SM4 and random check successful!";
+            }
+            else
+            {
+                JLOG(m_journal.info()) << "SM2/SM3/SM4 and random check failed!";
+                return -1;
+            }
+        }
+        else
+        {
+            JLOG(m_journal.info()) << "Get check obj failed! Please Check!";
+            return -1;
+        }
+    }
+#endif
+
     // We want to intercept and wait for CTRL-C to terminate the process
     m_signals.add (SIGINT);
 
@@ -1333,13 +1372,13 @@ bool ApplicationImp::setup()
         return false;
     }
 
-    {
-        auto setup = setup_ServerHandler(
-            *config_,
-            boost::beast::logstream { m_journal.error() });
-        setup.makeContexts();
-        serverHandler_->setup (setup, m_journal);
-    }
+    // {
+    //     auto setup = setup_ServerHandler(
+    //         *config_,
+    //         boost::beast::logstream { m_journal.error() });
+    //     setup.makeContexts();
+    //     serverHandler_->setup (setup, m_journal);
+    // }
 
     // Begin connecting to network.
     if (!config_->standalone())

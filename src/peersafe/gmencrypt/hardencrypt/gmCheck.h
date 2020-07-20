@@ -17,6 +17,7 @@ class GMCheck {
 
 public:
 	static GMCheck* getInstance();
+    static std::unique_ptr <ripple::Logs> logs;
 private:
     static GMCheck* gmInstance;
 
@@ -92,7 +93,7 @@ private:
 	
 private:
 	HardEncrypt* hEObj;
-    static std::unique_ptr <ripple::Logs> logs;
+    // static std::unique_ptr <ripple::Logs> logs;
     boost::beast::Journal gmCheckJournal_;
 	bool isRandomCycleCheckThread;
 	bool isRandomGenerateThread;
